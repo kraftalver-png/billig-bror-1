@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Billig Bror - Med Kart</title>
+    <title>Billig Bror - Prototype</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         :root {
             --primary: #2ecc71;
-            --dark: #1e1e1e;
-            --card-bg: #2c2c2c;
+            --dark: #121212;
+            --card-bg: #1e1e1e;
             --text: #ffffff;
-            --gray: #95a5a6;
+            --gray: #b0b0b0;
+            --accent: #3498db;
         }
 
         body {
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--dark);
             color: var(--text);
             padding-bottom: 80px;
@@ -26,139 +27,174 @@
 
         /* HEADER */
         header {
-            background: rgba(0,0,0,0.9);
-            padding: 15px;
+            background: rgba(18, 18, 18, 0.95);
+            padding: 15px 20px;
             position: sticky;
             top: 0;
             z-index: 1000;
             border-bottom: 1px solid #333;
-            text-align: center;
-        }
-
-        h1 { margin: 0; font-size: 22px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
-
-        /* LOCATION SELECTOR */
-        .location-container {
             display: flex;
-            justify-content: center;
-            gap: 10px;
-            padding: 10px;
-            background: #252525;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
         }
 
-        .loc-btn {
-            background: transparent;
-            border: 1px solid #555;
+        .logo { font-size: 20px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: -0.5px; }
+        .logo span { color: #fff; }
+
+        /* LOCATION TABS */
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            padding: 15px;
+            gap: 12px;
+            background: #181818;
+            scrollbar-width: none; /* Skjul scrollbar Firefox */
+        }
+        .tabs::-webkit-scrollbar { display: none; /* Skjul scrollbar Chrome/Safari */ }
+
+        .tab-btn {
+            background: #2a2a2a;
+            border: none;
             color: #ccc;
-            padding: 8px 14px;
-            border-radius: 20px;
+            padding: 10px 20px;
+            border-radius: 50px;
             cursor: pointer;
-            transition: 0.3s;
+            white-space: nowrap;
+            font-weight: 600;
             font-size: 14px;
+            transition: all 0.2s;
         }
 
-        .loc-btn.active {
+        .tab-btn.active {
             background: var(--primary);
-            border-color: var(--primary);
             color: #000;
-            font-weight: bold;
+            transform: scale(1.05);
         }
 
-        /* MAP STYLE */
+        /* MAP AREA */
         #map {
-            height: 250px; /* Høyde på kartet */
+            height: 280px;
             width: 100%;
-            border-bottom: 2px solid var(--primary);
+            z-index: 1;
         }
 
-        /* OFFER GRID */
+        /* CONTENT AREA */
         .container {
             padding: 20px;
             max-width: 600px;
             margin: 0 auto;
         }
 
-        .section-title { margin-bottom: 15px; font-size: 14px; color: var(--gray); text-transform: uppercase; }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title { font-size: 18px; font-weight: 700; }
+        .result-count { font-size: 12px; color: var(--gray); background: #333; padding: 2px 8px; border-radius: 10px; }
 
         .grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 15px;
+            gap: 20px;
         }
 
-        /* PRODUCT CARD */
+        /* PRO CARD DESIGN */
         .card {
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            display: flex;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
             position: relative;
-        }
-
-        .card-img {
-            width: 90px;
-            background: #eee;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 35px;
-        }
-
-        .card-content {
-            padding: 12px;
-            flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
         }
 
-        .store-logo {
+        .card-image-header {
+            height: 140px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+        }
+
+        .store-badge {
             position: absolute;
             top: 10px;
             right: 10px;
-            height: 20px; /* Justert for logoer */
-            background: white;
-            padding: 4px;
-            border-radius: 4px;
-            object-fit: contain;
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            color: #000;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
-        .product-name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
-        
-        .price-container { display: flex; align-items: baseline; gap: 8px; }
-        .new-price { font-size: 20px; color: var(--primary); font-weight: bold; }
-        .old-price { text-decoration: line-through; color: var(--gray); font-size: 12px; }
-        
-        .discount-badge {
-            display: inline-block;
+        .store-badge img { height: 16px; width: auto; }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .product-title { font-size: 18px; font-weight: 700; margin-bottom: 5px; line-height: 1.2; }
+        .store-location { font-size: 12px; color: var(--gray); margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+
+        .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .price-group { display: flex; align-items: baseline; gap: 8px; }
+        .current-price { font-size: 24px; font-weight: 800; color: var(--primary); }
+        .old-price { font-size: 14px; text-decoration: line-through; color: #666; }
+
+        .deal-tag {
             background: #e74c3c;
             color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
-            margin-top: 4px;
-            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Billig Bror</h1>
+        <div class="logo">Billig<span>Bror</span></div>
+        <div style="font-size: 20px;">💸</div>
     </header>
 
-    <div class="location-container">
-        <button class="loc-btn active" onclick="changeLocation('Gjøvik')">Gjøvik</button>
-        <button class="loc-btn" onclick="changeLocation('Hamar')">Hamar</button>
-        <button class="loc-btn" onclick="changeLocation('Lillehammer')">Lillehammer</button>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="setCity('Gjøvik')">Gjøvik</button>
+        <button class="tab-btn" onclick="setCity('Hamar')">Hamar</button>
+        <button class="tab-btn" onclick="setCity('Lillehammer')">Lillehammer</button>
     </div>
 
     <div id="map"></div>
 
     <div class="container">
-        <div class="section-title">Aktuelle tilbud i <span id="city-name" style="color:white">Gjøvik</span></div>
+        <div class="section-header">
+            <div class="section-title">Topptilbud i <span id="city-label" style="color:var(--primary)">Gjøvik</span></div>
+            <span class="result-count" id="count-label">3 funnet</span>
+        </div>
         <div id="offer-grid" class="grid">
             </div>
     </div>
@@ -166,7 +202,16 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // --- LOGO URLER (Sikre lenker til SVG filer) ---
+    // --- 1. BUTIKK BILDER (Faktiske bilder fra Wikimedia) ---
+    // Bruker interiør/eksteriør bilder for å gi en "ekte" følelse.
+    const storeImages = {
+        'Extra': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Coop_Extra_logo.svg/1200px-Coop_Extra_logo.svg.png', // Logo som fallback da gode butikkbilder mangler
+        'Rema 1000': 'https://upload.wikimedia.org/wikipedia/commons/e/e4/REMA_1000_Supermarket_interior_grocery_store_T%C3%B8nsberg%2C_Norway_2017-11-03_Breads_etc.jpg', // Interiør
+        'Kiwi': 'https://upload.wikimedia.org/wikipedia/commons/4/42/KIWI_minipris_148_ubt.JPG', // Butikkfasade
+        'Meny': 'https://upload.wikimedia.org/wikipedia/commons/6/6d/Meny_-_Kuben_senter.jpg' // Butikkfasade
+    };
+
+    // --- 2. LOGOER (For hjørnet av kortet) ---
     const logos = {
         'Extra': 'https://upload.wikimedia.org/wikipedia/commons/f/fb/Coop_Extra_logo.svg',
         'Rema 1000': 'https://upload.wikimedia.org/wikipedia/commons/8/85/Rema_1000_Logo.svg',
@@ -174,57 +219,126 @@
         'Meny': 'https://upload.wikimedia.org/wikipedia/commons/d/dc/Meny_Logo.svg'
     };
 
-    // --- DATA ---
-    // Inkluderer koordinater (lat/lng) for butikkene for å vise på kartet
-    const offersData = [
-        // GJØVIK (Koordinater er ca. sentrum/butikkplasseringer)
-        { city: 'Gjøvik', store: 'Extra', product: 'Godt & Blandet', price: 30, oldPrice: 49, emoji: '🍬', lat: 60.796, lng: 10.685 },
-        { city: 'Gjøvik', store: 'Rema 1000', product: 'Kjøttdeig 400g', price: 45, oldPrice: 65, emoji: '🥩', lat: 60.790, lng: 10.695 },
-        { city: 'Gjøvik', store: 'Kiwi', product: 'Grandiosa', price: 29, oldPrice: 59, emoji: '🍕', lat: 60.800, lng: 10.680 },
-        
+    // --- 3. DATA MED PRESISE KOORDINATER ---
+    const offers = [
+        // GJØVIK
+        { 
+            city: 'Gjøvik', 
+            chain: 'Extra', 
+            storeName: 'Extra Kirkeby', 
+            address: 'Valdresvegen 6',
+            product: 'Godt & Blandet', 
+            price: 30, old: 49, 
+            lat: 60.7850, lng: 10.6820 
+        },
+        { 
+            city: 'Gjøvik', 
+            chain: 'Rema 1000', 
+            storeName: 'Rema 1000 Gjøvik Stadion', 
+            address: 'Marcus Thranesgt. 8',
+            product: 'Kjøttdeig 400g', 
+            price: 45, old: 65, 
+            lat: 60.7989, lng: 10.6844 
+        },
+        { 
+            city: 'Gjøvik', 
+            chain: 'Kiwi', 
+            storeName: 'Kiwi Strandgata', 
+            address: 'Strandgata 13',
+            product: 'Grandiosa Pizza', 
+            price: 29, old: 59, 
+            lat: 60.7933, lng: 10.6951 
+        },
+
         // HAMAR
-        { city: 'Hamar', store: 'Kiwi', product: 'Smågodt (hg)', price: 9, oldPrice: 16, emoji: '🍭', lat: 60.794, lng: 11.068 },
-        { city: 'Hamar', store: 'Extra', product: 'Norvegia Ost', price: 89, oldPrice: 129, emoji: '🧀', lat: 60.798, lng: 11.075 },
-        { city: 'Hamar', store: 'Rema 1000', product: 'Coca Cola 4pk', price: 79, oldPrice: 119, emoji: '🥤', lat: 60.791, lng: 11.060 },
+        { 
+            city: 'Hamar', 
+            chain: 'Kiwi', 
+            storeName: 'Kiwi Holsetgården', 
+            address: 'Østregate 12',
+            product: 'Smågodt (pr hg)', 
+            price: 9, old: 16, 
+            lat: 60.7949, lng: 11.0749 
+        },
+        { 
+            city: 'Hamar', 
+            chain: 'Extra', 
+            storeName: 'Extra Maxi Hamar', 
+            address: 'Aslak Boltsgate 48',
+            product: 'Norvegia Ost', 
+            price: 89, old: 129, 
+            lat: 60.8000, lng: 11.0500 
+        },
+        { 
+            city: 'Hamar', 
+            chain: 'Rema 1000', 
+            storeName: 'Rema 1000 Storhamar', 
+            address: 'Kornsilovegen 58',
+            product: 'Coca Cola 4pk', 
+            price: 79, old: 119, 
+            lat: 60.8017, lng: 11.0351 
+        },
 
         // LILLEHAMMER
-        { city: 'Lillehammer', store: 'Meny', product: 'Entrecôte', price: 199, oldPrice: 359, emoji: '🥩', lat: 61.115, lng: 10.466 },
-        { city: 'Lillehammer', store: 'Extra', product: 'Godt & Blandet', price: 30, oldPrice: 49, emoji: '🍬', lat: 61.120, lng: 10.470 },
-        { city: 'Lillehammer', store: 'Kiwi', product: 'Bleier (Libero)', price: 15, oldPrice: 30, emoji: '👶', lat: 61.110, lng: 10.460 }
+        { 
+            city: 'Lillehammer', 
+            chain: 'Meny', 
+            storeName: 'CC Mat Lillehammer', 
+            address: 'Sliperiveien 2',
+            product: 'Fersk Entrecôte', 
+            price: 199, old: 359, 
+            lat: 61.1141, lng: 10.4503 
+        },
+        { 
+            city: 'Lillehammer', 
+            chain: 'Kiwi', 
+            storeName: 'Kiwi Storgata', 
+            address: 'Storgata 62',
+            product: 'Libero Bleier', 
+            price: 15, old: 30, 
+            lat: 61.1152, lng: 10.4660 
+        },
+        // (Merk: Bruker en sentral plassering for Extra i Lillehammer for prototypens skyld)
+        { 
+            city: 'Lillehammer', 
+            chain: 'Extra', 
+            storeName: 'Extra Ålstadsenteret', 
+            address: 'Nordre Ål',
+            product: 'Godt & Blandet', 
+            price: 30, old: 49, 
+            lat: 61.1300, lng: 10.4600 
+        }
     ];
 
-    // By-koordinater (Hvor kartet skal fokusere)
-    const cityCoords = {
-        'Gjøvik': [60.795, 10.691],
-        'Hamar': [60.794, 11.067],
-        'Lillehammer': [61.115, 10.466]
+    // Koordinater for sentrum av byene
+    const cityCenters = {
+        'Gjøvik': [60.795, 10.690],
+        'Hamar': [60.795, 11.070],
+        'Lillehammer': [61.115, 10.460]
     };
 
-    let currentCity = 'Gjøvik';
     let map;
     let markers = [];
+    let currentCity = 'Gjøvik';
 
-    // --- INITIALISERING ---
-    function init() {
-        // Lag kartet, start i Gjøvik
-        map = L.map('map').setView(cityCoords['Gjøvik'], 13);
-
-        // Legg til kart-fliser (OpenStreetMap - Gratis alternativ til Google Maps)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+    function initMap() {
+        map = L.map('map', { zoomControl: false }).setView(cityCenters['Gjøvik'], 13);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap & CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
         }).addTo(map);
 
-        // Vis innhold
         renderContent();
     }
 
-    // --- OPPDATER INNHOLD ---
-    function changeLocation(city) {
+    function setCity(city) {
         currentCity = city;
-        document.getElementById('city-name').innerText = city;
+        document.getElementById('city-label').innerText = city;
         
         // Oppdater knapper
-        document.querySelectorAll('.loc-btn').forEach(btn => {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.innerText === city);
         });
 
@@ -235,50 +349,79 @@
         const grid = document.getElementById('offer-grid');
         grid.innerHTML = '';
         
-        // Fjern gamle markører fra kartet
+        // Fjern gamle markører
         markers.forEach(m => map.removeLayer(m));
         markers = [];
 
-        // Flytt kartet til valgt by
-        map.flyTo(cityCoords[currentCity], 13, { duration: 1.5 });
+        // Flytt kart
+        map.flyTo(cityCenters[currentCity], 14, { duration: 1.2 });
 
-        // Filtrer tilbud
-        const offers = offersData.filter(o => o.city === currentCity);
+        const filtered = offers.filter(o => o.city === currentCity);
+        document.getElementById('count-label').innerText = `${filtered.length} funnet`;
 
-        if (offers.length === 0) {
-            grid.innerHTML = '<p style="text-align:center; color:#777;">Ingen tilbud her akkurat nå.</p>';
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; padding:40px; color:#666">Ingen tilbud funnet her.</div>';
             return;
         }
 
-        offers.forEach(offer => {
-            const discount = Math.round(((offer.oldPrice - offer.price) / offer.oldPrice) * 100);
+        filtered.forEach(offer => {
+            const discount = Math.round(((offer.old - offer.price) / offer.old) * 100);
+            
+            // Bruk faktisk butikkbilde, eller fallback
+            const bgImage = storeImages[offer.chain] || storeImages['Extra'];
 
-            // 1. Lag kortet i listen
+            // Lag HTML kort
             const html = `
                 <div class="card">
-                    <div class="card-img">${offer.emoji}</div>
-                    <img src="${logos[offer.store]}" class="store-logo" alt="${offer.store}">
-                    <div class="card-content">
-                        <div class="product-name">${offer.product}</div>
-                        <div class="price-container">
-                            <span class="new-price">${offer.price} kr</span>
-                            <span class="old-price">${offer.oldPrice} kr</span>
+                    <div class="card-image-header" style="background-image: url('${bgImage}')">
+                        <div class="card-overlay"></div>
+                        <div class="store-badge">
+                            <img src="${logos[offer.chain]}" alt="${offer.chain}">
+                            ${offer.chain}
                         </div>
-                        <div class="discount-badge">-${discount}%</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="product-title">${offer.product}</div>
+                        <div class="store-location">
+                            📍 ${offer.storeName} (${offer.address})
+                        </div>
+                        <div class="price-row">
+                            <div class="price-group">
+                                <span class="current-price">${offer.price},-</span>
+                                <span class="old-price">${offer.old},-</span>
+                            </div>
+                            <div class="deal-tag">-${discount}%</div>
+                        </div>
                     </div>
                 </div>
             `;
             grid.innerHTML += html;
 
-            // 2. Legg til markør (pin) på kartet for denne butikken
-            const marker = L.marker([offer.lat, offer.lng]).addTo(map);
-            marker.bindPopup(`<b>${offer.store}</b><br>${offer.product}: ${offer.price} kr`);
+            // Lag kart-markør
+            const iconHtml = `<div style="background:${getBrandColor(offer.chain)}; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 0 5px black;"></div>`;
+            
+            const customIcon = L.divIcon({
+                html: iconHtml,
+                className: 'custom-pin',
+                iconSize: [16, 16]
+            });
+
+            const marker = L.marker([offer.lat, offer.lng], { icon: customIcon }).addTo(map);
+            marker.bindPopup(`<b>${offer.product}</b><br>${offer.price} kr hos ${offer.chain}`);
             markers.push(marker);
         });
     }
 
-    // Start appen når siden er lastet
-    init();
+    function getBrandColor(chain) {
+        if(chain === 'Extra') return '#0074bc'; // Blå
+        if(chain === 'Kiwi') return '#7dc242'; // Grønn
+        if(chain === 'Rema 1000') return '#005a9c'; // Mørkeblå
+        if(chain === 'Meny') return '#c4161c'; // Rød
+        return '#fff';
+    }
+
+    // Start
+    initMap();
 
 </script>
 </body>
