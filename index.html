@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billig Bror - Prototype</title>
+    <style>
+        :root {
+            --primary: #2ecc71;
+            --dark: #1e1e1e;
+            --card-bg: #2c2c2c;
+            --text: #ffffff;
+            --gray: #95a5a6;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--text);
+            padding-bottom: 80px; /* Plass til navigasjon nede hvis vi vil ha det */
+        }
+
+        /* HEADER */
+        header {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+            text-align: center;
+        }
+
+        h1 { margin: 0; font-size: 24px; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 5px 0 0; font-size: 12px; color: var(--gray); }
+
+        /* LOCATION SELECTOR */
+        .location-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #252525;
+        }
+
+        .loc-btn {
+            background: transparent;
+            border: 2px solid #444;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .loc-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #000;
+        }
+
+        .loc-btn:hover { border-color: var(--primary); }
+
+        /* OFFER GRID */
+        .container {
+            padding: 20px;
+            max-width: 600px; /* Mobil-fokus */
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        /* PRODUCT CARD */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .card:hover { transform: translateY(-2px); }
+
+        .card-img {
+            width: 100px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .card-content {
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .store-logo {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            height: 25px;
+            background: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .price-container {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .new-price {
+            font-size: 22px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .discount-badge {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 5px;
+            width: fit-content;
+        }
+
+        .expiry {
+            font-size: 10px;
+            color: #777;
+            margin-top: 8px;
+        }
+
+        /* LOADING STATE */
+        #loader { text-align: center; padding: 20px; color: var(--gray); display: none; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Billig Bror</h1>
+        <p>Din lokale tilbudsjeger</p>
+    </header>
+
+    <div class="location-container">
+        <button class="loc-btn active" onclick="setCity('Gjøvik')">Gjøvik</button>
+        <button class="loc-btn" onclick="setCity('Hamar')">Hamar</button>
+        <button class="loc-btn" onclick="setCity('Lillehammer')">Lillehammer</button>
+    </div>
+
+    <div id="loader">Laster tilbud...</div>
+
+    <div class="container">
+        <h3 id="current-location-text">Viser tilbud for: <span style="color:var(--primary)">Gjøvik</span></h3>
+        <div id="offer-grid" class="grid">
+            </div>
+    </div>
+
+<script>
+    // --- SIMULERT DATABASE ---
+    // Her legger vi inn data manuelt siden vi ikke har en server enda.
+    
+    // Logo URLs (Hentet fra Wikimedia for demo)
+    const logos = {
+        'Extra': 'https://upload.wikimedia.org/wikipedia/commons/f/fb/Coop_Extra_logo.svg',
+        'Rema 1000': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Rema_1000_logo.svg/2560px-Rema_1000_logo.svg.png',
+        'Kiwi': 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Kiwi_Minipris_Logo.svg',
+        'Meny': 'https://upload.wikimedia.org/wikipedia/commons/d/dc/Meny_Logo.svg'
+    };
+
+    const offersData = [
+        // GJØVIK
+        { city: 'Gjøvik', store: 'Extra', product: 'Godt & Blandet', price: 30, oldPrice: 49, emoji: '🍬', expiry: 'Gjelder ut uka' },
+        { city: 'Gjøvik', store: 'Rema 1000', product: 'Kjøttdeig 400g', price: 45, oldPrice: 65, emoji: '🥩', expiry: 'Kun i dag' },
+        { city: 'Gjøvik', store: 'Kiwi', product: 'Grandiosa', price: 29, oldPrice: 59, emoji: '🍕', expiry: 'Ut uka' },
+        { city: 'Gjøvik', store: 'Meny', product: 'Fersk Laks', price: 99, oldPrice: 149, emoji: '🐟', expiry: 'Ferskvaredisken' },
+        
+        // HAMAR
+        { city: 'Hamar', store: 'Kiwi', product: 'Smågodt', price: 9, oldPrice: 16, emoji: '🍭', expiry: 'Pr. hg' },
+        { city: 'Hamar', store: 'Extra', product: 'Norvegia Ost', price: 89, oldPrice: 129, emoji: '🧀', expiry: 'Medlemstilbud' },
+        { city: 'Hamar', store: 'Rema 1000', product: 'Coca Cola 4pk', price: 79, oldPrice: 119, emoji: '🥤', expiry: 'Helgekupp' },
+
+        // LILLEHAMMER
+        { city: 'Lillehammer', store: 'Meny', product: 'Entrecôte', price: 199, oldPrice: 359, emoji: '🥩', expiry: 'Helgetilbud' },
+        { city: 'Lillehammer', store: 'Extra', product: 'Godt & Blandet', price: 30, oldPrice: 49, emoji: '🍬', expiry: 'Nasjonal kampanje' },
+        { city: 'Lillehammer', store: 'Kiwi', product: 'Bleier (Libero)', price: 15, oldPrice: 30, emoji: '👶', expiry: 'Bleieavtale' },
+        { city: 'Lillehammer', store: 'Rema 1000', product: 'Tacolefser', price: 10, oldPrice: 24, emoji: '🌮', expiry: 'Taco-fredag' }
+    ];
+
+    let currentCity = 'Gjøvik';
+
+    // Funksjon for å bytte by
+    function setCity(city) {
+        currentCity = city;
+        
+        // Oppdater knapper
+        document.querySelectorAll('.loc-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.innerText === city) btn.classList.add('active');
+        });
+
+        document.getElementById('current-location-text').innerHTML = `Viser tilbud for: <span style="color:var(--primary)">${city}</span>`;
+        
+        renderOffers();
+    }
+
+    // Funksjon for å lage HTML-kortene
+    function renderOffers() {
+        const grid = document.getElementById('offer-grid');
+        const loader = document.getElementById('loader');
+        
+        // Tøm grid og vis loader kort
+        grid.innerHTML = '';
+        loader.style.display = 'block';
+
+        // Filtrer data basert på valgt by
+        const filteredOffers = offersData.filter(item => item.city === currentCity);
+
+        // Simuler litt lastetid for "app-følelse"
+        setTimeout(() => {
+            loader.style.display = 'none';
+
+            if (filteredOffers.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; color:#777;">Ingen tilbud funnet i dette området akkurat nå.</p>';
+                return;
+            }
+
+            filteredOffers.forEach(offer => {
+                // Beregn rabatt i prosent
+                const discount = Math.round(((offer.oldPrice - offer.price) / offer.oldPrice) * 100);
+
+                const cardHTML = `
+                    <div class="card">
+                        <div class="card-img">${offer.emoji}</div>
+                        <img src="${logos[offer.store]}" class="store-logo" alt="${offer.store}">
+                        <div class="card-content">
+                            <div class="product-name">${offer.product}</div>
+                            <div class="price-container">
+                                <span class="new-price">${offer.price} kr</span>
+                                <span class="old-price">${offer.oldPrice} kr</span>
+                            </div>
+                            <div class="discount-badge">-${discount}%</div>
+                            <div class="expiry">🕒 ${offer.expiry}</div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHTML;
+            });
+        }, 300); // 300ms forsinkelse
+    }
+
+    // Start appen
+    renderOffers();
+
+</script>
+
+</body>
+</html>
